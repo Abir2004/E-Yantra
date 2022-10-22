@@ -70,6 +70,8 @@ class Edrone():
 		self.max_roll = 2000
 		self.min_roll = 1000
 
+		self.positions = [[0,0,23],[2,0,23],[2,2,23],[-2,2,23],[-2,-2,23],[2,-2,23],[2,0,23],[0,0,23]]
+
 
 		#initial setting of Kp, Kd and ki for [roll, pitch, throttle]. eg: self.Kp[2] corresponds to Kp value in throttle axis
 		#after tuning and computing corresponding PID parameters, change the parameters
@@ -87,20 +89,7 @@ class Edrone():
 		self.change_in_error = [0, 0, 0]
 		
 		self.output = [0, 0, 0]
-	
-	def change_pos(self,a,b,c):
-		self.setpoint = [a,b,c]
-		
 
-
-
-
-		# Hint : Add variables for storing previous errors in each axis, like self.prev_values = [0,0,0] where corresponds to [pitch, roll, throttle]		#		 Add variables for limiting the values like self.max_values = [2000,2000,2000] corresponding to [roll, pitch, throttle]
-		#													self.min_values = [1000,1000,1000] corresponding to [pitch, roll, throttle]
-		#																	You can change the upper limit and lower limit accordingly. 
-		#----------------------------------------------------------------------------------------------------------
-
-		# # This is the sample time in which you need to run pid. Choose any time which you seem fit. Remember the stimulation step time is 50 ms
 		self.sample_time = 0.060 # in seconds
 
 
@@ -136,7 +125,10 @@ class Edrone():
 		#------------------------------------------------------------------------------------------------------------
 
 		self.arm() # ARMING THE DRONE
-
+	
+	def change_pos(self,a,b,c):
+		self.setpoint = [a,b,c]
+	
 
 	# Disarming condition of the drone
 	def disarm(self):
@@ -144,6 +136,20 @@ class Edrone():
 		self.command_pub.publish(self.cmd)
 		rospy.sleep(1)
 
+	def check_point(current, target):
+		x_reached = False
+		y_reached = False
+		z_reached = False
+		if abs(current[0 - target[0]]) < 0.2:
+			x_reached = True
+		if abs(current[1] - target[1]) < 0.2:
+			y_reached = True
+		if abs(current[2] - target[2]) < 0.2:
+			z_reached = True
+		
+		if x_reached and y_reached and z_reached: return True 
+		else: return False
+			
 
 	# Arming condition of the drone : Best practise is to disarm and then arm the drone.
 	def arm(self):
@@ -292,7 +298,8 @@ class Edrone():
 		print('roll: ', self.cmd.rcRoll)
 		print('pitch: ', self.cmd.rcPitch)
 		print(self.drone_position)
-		return self.drone_position
+
+	
 
 
 
@@ -301,14 +308,17 @@ if __name__ == '__main__':
 
 	e_drone = Edrone()
 	r = rospy.Rate(16.67) #specify rate in Hz based upon your desired PID sampling time, i.e. if desired sample time is 33ms specify rate as 30Hz
-	positions = [[0,0,23],[2,0,23],[2,2,23],[-2,2,23],[-2,-2,23],[2,-2,23],[2,0,23],[0,0,23]]
+	
 	while not rospy.is_shutdown():
-		for l in positions:
-			e_drone.change_pos(l[0],l[1],l[2])
-			x = e_drone.pid()
-			while abs(x[0]-l[0]) > 0.2 and abs(x[1]-l[1]) > 0.2 and abs(x[2]-l[2]) > 0.2:
-				x = e_drone.pid()
-		else:
-			break
+		for i, pos in enumerate(e_drone.positions):
+			e_drone.setpoint = pos
+
+			while not e_drone.check_point(e_drone.drone_position, e_drone.setpoint):
+				e_drone.pid()
+				continue
+			
+			print('reached ', e_drone.setpoint)
+
+			
 		r.sleep()
 		
