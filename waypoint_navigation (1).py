@@ -140,7 +140,7 @@ class Edrone():
 		x_reached = False
 		y_reached = False
 		z_reached = False
-		if abs(current[0 - target[0]]) < 0.2:
+		if abs(current[0] - target[0]) < 0.2:
 			x_reached = True
 		if abs(current[1] - target[1]) < 0.2:
 			y_reached = True
