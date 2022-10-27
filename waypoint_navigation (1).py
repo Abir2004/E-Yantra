@@ -170,6 +170,7 @@ class Edrone():
 		
 		self.command_pub.publish(self.cmd)	# Publishing /drone_command
 		print('armed the drone')
+		rospy.sleep(1)
 
 
 
@@ -298,7 +299,10 @@ class Edrone():
 		print('roll: ', self.cmd.rcRoll)
 		print('pitch: ', self.cmd.rcPitch)
 		print(self.drone_position)
-
+		self.command_pub.publish(self.cmd)
+		self.alt_error_pub.publish(self.throttle_error)
+		self.pitch_error_pub.publish(self.pitch_error)
+		self.roll_error_pub.publish(self.roll_error)
 	
 
 
@@ -315,6 +319,7 @@ if __name__ == '__main__':
 
 			while not e_drone.check_point(e_drone.drone_position, e_drone.setpoint):
 				e_drone.pid()
+				r.sleep()
 				continue
 			
 			print('reached ', e_drone.setpoint)
