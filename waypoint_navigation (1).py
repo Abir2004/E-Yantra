@@ -316,6 +316,7 @@ if __name__ == '__main__':
 	while not rospy.is_shutdown():
 		for i, pos in enumerate(e_drone.positions):
 			e_drone.setpoint = pos
+			print('setpoint: ', e_drone.setpoint)
 
 			while not e_drone.check_point(e_drone.drone_position, e_drone.setpoint):
 				e_drone.pid()
